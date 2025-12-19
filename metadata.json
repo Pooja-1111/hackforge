@@ -1,0 +1,8 @@
+
+{
+  "name": "G-Card",
+  "description": "A phygital gifting application for sending and receiving money with personalized messages via QR codes.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
