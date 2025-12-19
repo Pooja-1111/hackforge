@@ -4,6 +4,34 @@ import { Copy, Check, Share2, Info } from 'lucide-react';
 
 const QRDisplay = ({ gift, onDone }) => {
     const [copied, setCopied] = useState(false);
+    const [timeLeft, setTimeLeft] = useState('');
+    const [isExpired, setIsExpired] = useState(false);
+
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const expiry = new Date(gift.expiryDate);
+            const diff = expiry - now;
+
+            if (diff <= 0) {
+                setIsExpired(true);
+                setTimeLeft('Expired');
+                clearInterval(interval);
+            } else {
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+
+                if (hours > 0) {
+                    setTimeLeft(`${hours}h ${minutes}m`);
+                } else {
+                    setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+                }
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [gift.expiryDate]);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(gift.uniqueCode);
@@ -37,14 +65,30 @@ const QRDisplay = ({ gift, onDone }) => {
             </div>
 
             <div className="flex-1 flex flex-col items-center">
+                <div className="mb-6 flex flex-col items-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Expires In</p>
+                    <div className={`text-2xl font-mono font-black ${isExpired ? 'text-red-500' : 'text-blue-900'}`}>
+                        {timeLeft}
+                    </div>
+                </div>
+
                 <div className="p-8 bg-white border border-blue-50 rounded-3xl shadow-sm mb-8 relative">
-                    <div className="w-48 h-48 bg-white rounded-xl flex items-center justify-center overflow-hidden">
-                        <QRCode
-                            value={gift.uniqueCode}
-                            size={160}
-                            fgColor="#1e3a8a" // Blue-900
-                            bgColor="#ffffff"
-                        />
+                    <div className="w-48 h-48 bg-white rounded-xl flex items-center justify-center overflow-hidden relative">
+                        <div className={isExpired ? 'blur-md opacity-20 transition-all duration-500' : ''}>
+                            <QRCode
+                                value={gift.uniqueCode}
+                                size={160}
+                                fgColor="#1e3a8a" // Blue-900
+                                bgColor="#ffffff"
+                            />
+                        </div>
+                        {isExpired && (
+                            <div className="absolute inset-0 flex items-center justify-center z-10">
+                                <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-bold text-sm border border-red-100 uppercase tracking-wider transform -rotate-12 shadow-sm">
+                                    Expired
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

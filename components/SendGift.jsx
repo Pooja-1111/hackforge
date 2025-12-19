@@ -7,6 +7,9 @@ const SendGift = ({ sender, onComplete, onBack }) => {
     const [recipient, setRecipient] = useState('');
     const [amount, setAmount] = useState('');
     const [message, setMessage] = useState('');
+    const [tone, setTone] = useState('Friendly');
+    const [context, setContext] = useState('');
+    const [validity, setValidity] = useState(60); // Default 60 minutes
     const [isSearching, setIsSearching] = useState(false);
     const [isValidRecipient, setIsValidRecipient] = useState(false);
     const [paymentDone, setPaymentDone] = useState(false);
@@ -70,7 +73,7 @@ const SendGift = ({ sender, onComplete, onBack }) => {
     const handleGenerateMessages = async () => {
         if (!amount || !recipient) return;
         setIsGenerating(true);
-        const msgs = await getMessageSuggestions(Number(amount), recipient);
+        const msgs = await getMessageSuggestions(Number(amount), recipient, tone, context);
         setSuggestions(msgs);
         setIsGenerating(false);
     };
@@ -85,7 +88,7 @@ const SendGift = ({ sender, onComplete, onBack }) => {
             uniqueCode: `GC-${Math.random().toString(36).toUpperCase().substr(2, 6)}`,
             status: 'pending',
             createdAt: new Date().toISOString(),
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            expiryDate: new Date(Date.now() + validity * 60 * 1000).toISOString()
         };
         onComplete(newGift);
     };
@@ -150,6 +153,29 @@ const SendGift = ({ sender, onComplete, onBack }) => {
                             </div>
                         </div>
 
+                        <div className={`space-y-3 transition-all duration-300 ${!amount || !isValidRecipient ? 'opacity-30 pointer-events-none' : ''}`}>
+                            <label className="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Validity Period</label>
+                            <div className="flex gap-2">
+                                {[
+                                    { label: '15 Mins', value: 15 },
+                                    { label: '1 Hour', value: 60 },
+                                    { label: '24 Hours', value: 1440 },
+                                    { label: '7 Days', value: 10080 }
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => setValidity(opt.value)}
+                                        className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${validity === opt.value
+                                                ? 'bg-blue-900 text-white border-blue-900 shadow-md'
+                                                : 'bg-white text-slate-500 border-blue-50 hover:border-blue-200'
+                                            }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className={`space-y-4 transition-all duration-300 ${!amount || !isValidRecipient ? 'opacity-30 pointer-events-none' : ''}`}>
                             <label className="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Quick Payment</label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -196,25 +222,55 @@ const SendGift = ({ sender, onComplete, onBack }) => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between px-1">
                                 <label className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Add a Message</label>
+                            </div>
+
+                            <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tone</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Friendly', 'Funny', 'Heartfelt', 'Witty', 'Professional'].map((t) => (
+                                            <button
+                                                key={t}
+                                                onClick={() => setTone(t)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${tone === t ? 'bg-blue-900 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-300'}`}
+                                            >
+                                                {t}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Occasion (Optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Birthday, Pizza night, Sorry I'm late..."
+                                        value={context}
+                                        onChange={(e) => setContext(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                                    />
+                                </div>
+
                                 <button
                                     onClick={handleGenerateMessages}
                                     disabled={isGenerating}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-900 rounded-full hover:bg-blue-100 disabled:opacity-50 active:scale-95 transition-all"
+                                    className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-3 bg-blue-100 text-blue-900 rounded-xl hover:bg-blue-200 disabled:opacity-50 active:scale-95 transition-all"
                                 >
                                     {isGenerating ? (
                                         <div className="w-3 h-3 border-2 border-blue-900 border-t-transparent rounded-full animate-spin" />
                                     ) : (
-                                        <Wand2 className="w-3 h-3" />
+                                        <Wand2 className="w-4 h-4" />
                                     )}
-                                    <span className="text-[10px] font-black uppercase">Magic Suggestions</span>
+                                    <span className="text-xs font-black uppercase">Generate {tone} Suggestions</span>
                                 </button>
                             </div>
+
                             <textarea
                                 rows={4}
-                                placeholder="Make it personal..."
+                                placeholder="Or write your own..."
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                className="w-full p-5 border border-blue-50 rounded-2xl outline-none focus:ring-4 focus:ring-blue-100/50 bg-slate-50 focus:bg-white transition-all resize-none text-sm font-medium leading-relaxed"
+                                className="w-full p-5 border border-blue-50 rounded-2xl outline-none focus:ring-4 focus:ring-blue-100/50 bg-white transition-all resize-none text-sm font-medium leading-relaxed"
                             />
                         </div>
 

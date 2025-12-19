@@ -128,7 +128,8 @@ const Dashboard = ({ user, gifts, onSend, onReceive, onLogout, onCancel }) => {
                             <p className="text-5xl font-black text-blue-900 tracking-tighter">₹{viewedGift.amount.toFixed(2)}</p>
                             <div className={`inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${viewedGift.status === 'redeemed' ? 'bg-green-100 text-green-700' :
                                 viewedGift.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                    'bg-blue-100 text-blue-700'
+                                    viewedGift.status === 'expired' ? 'bg-slate-200 text-slate-600 line-through decoration-2' :
+                                        'bg-blue-100 text-blue-700'
                                 }`}>
                                 {viewedGift.status}
                             </div>
@@ -149,14 +150,52 @@ const Dashboard = ({ user, gifts, onSend, onReceive, onLogout, onCancel }) => {
                                     <p className="text-sm text-slate-600 italic leading-relaxed font-medium">"{viewedGift.message}"</p>
                                 </div>
                             )}
+
+                            {viewedGift.replyMessage && (
+                                <div className="bg-indigo-50/40 p-5 rounded-2xl border border-indigo-50 relative mt-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Reply from @{viewedGift.recipientId}</p>
+                                    </div>
+                                    <p className="text-sm text-slate-600 italic leading-relaxed font-medium">"{viewedGift.replyMessage}"</p>
+                                </div>
+                            )}
                         </div>
 
-                        <button
-                            onClick={() => setViewedGift(null)}
-                            className="w-full py-4 bg-slate-100 text-slate-800 font-bold rounded-2xl hover:bg-slate-200 active:scale-95 transition-all shadow-sm"
-                        >
-                            Back to Activity
-                        </button>
+                        <div className="flex flex-col gap-3">
+                            {(viewedGift.status === 'expired' || viewedGift.status === 'cancelled') && (
+                                <button
+                                    onClick={() => {
+                                        setViewedGift(null);
+                                        onSend(); // Navigate to send flow
+                                    }}
+                                    className="w-full py-4 bg-blue-900 text-white font-bold rounded-2xl hover:bg-blue-800 active:scale-95 transition-all shadow-xl shadow-blue-900/10 uppercase tracking-widest text-xs"
+                                >
+                                    Resend Gift
+                                </button>
+                            )}
+
+                            {viewedGift.status === 'pending' && viewedGift.senderId === user.id && (
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Are you sure you want to cancel this gift? The amount will be refunded to your wallet.')) {
+                                            onCancel(viewedGift.id);
+                                            setViewedGift(null);
+                                        }
+                                    }}
+                                    className="w-full py-4 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 active:scale-95 transition-all shadow-sm border border-red-100 uppercase tracking-widest text-xs"
+                                >
+                                    Cancel Gift & Refund
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => setViewedGift(null)}
+                                className="w-full py-4 bg-slate-100 text-slate-800 font-bold rounded-2xl hover:bg-slate-200 active:scale-95 transition-all shadow-sm"
+                            >
+                                Back to Activity
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

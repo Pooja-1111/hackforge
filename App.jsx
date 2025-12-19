@@ -3,6 +3,7 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import SendGift from './components/SendGift';
 import ReceiveGift from './components/ReceiveGift';
+import RedemptionSuccess from './components/RedemptionSuccess';
 import QRDisplay from './components/QRDisplay';
 import { ChevronLeft } from 'lucide-react';
 
@@ -16,8 +17,8 @@ const MOCK_USER = {
 const MOCK_GIFTS = [
     {
         id: 'g-1',
-        senderId: 'user-2',
-        recipientId: 'user-1',
+        senderId: 'user-1',
+        recipientId: 'user-2',
         amount: 50.00,
         message: 'Happy Birthday Alex!',
         uniqueCode: 'GC-X892-Z',
@@ -36,6 +37,17 @@ const MOCK_GIFTS = [
         createdAt: '2024-05-10T14:20:00Z',
         redeemedAt: '2024-05-11T09:15:00Z',
         expiryDate: '2024-06-10T14:20:00Z'
+    },
+    {
+        id: 'g-3',
+        senderId: 'user-1',
+        recipientId: 'user-4',
+        amount: 75.00,
+        message: 'Coffee treat! ☕',
+        uniqueCode: 'GC-TEST-1',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiryDate: new Date(Date.now() + 86400000).toISOString() // Tomorrow
     }
 ];
 
@@ -44,6 +56,7 @@ const App = () => {
     const [view, setView] = useState('login');
     const [gifts, setGifts] = useState(MOCK_GIFTS);
     const [activeGift, setActiveGift] = useState(null);
+    const [justRedeemedGift, setJustRedeemedGift] = useState(null);
 
     const handleLogin = (username) => {
         setCurrentUser({ ...MOCK_USER, username });
@@ -62,18 +75,70 @@ const App = () => {
     };
 
     const redeemGift = (code) => {
-        const updatedGifts = gifts.map(g => {
-            if (g.uniqueCode === code && g.status === 'pending') {
-                return { ...g, status: 'redeemed', redeemedAt: new Date().toISOString() };
+        const giftIndex = gifts.findIndex(g => g.uniqueCode === code);
+
+        if (giftIndex !== -1) {
+            const gift = gifts[giftIndex];
+
+            if (gift.status === 'redeemed') {
+                alert('This gift has already been redeemed.');
+                return;
             }
-            return g;
-        });
-        setGifts(updatedGifts);
+
+            if (gift.status === 'cancelled') {
+                alert('This gift has been cancelled by the sender.');
+                return;
+            }
+
+            const now = new Date();
+            const expiry = new Date(gift.expiryDate);
+            if (now > expiry) {
+                // Auto-update status to expired if not already
+                if (gift.status !== 'expired') {
+                    const updatedGifts = [...gifts];
+                    updatedGifts[giftIndex] = { ...gift, status: 'expired' };
+                    setGifts(updatedGifts);
+                }
+                alert('This gift code has expired.');
+                return;
+            }
+
+            // Update gift status
+            const updatedGifts = [...gifts];
+            updatedGifts[giftIndex] = { ...gift, status: 'redeemed', redeemedAt: new Date().toISOString() };
+            setGifts(updatedGifts);
+
+            // Update receiver wallet (mock)
+            const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + gift.amount };
+            setCurrentUser(updatedUser);
+
+            setJustRedeemedGift(updatedGifts[giftIndex]);
+            setView('redemption-success');
+        } else {
+            alert('Invalid gift code.');
+        }
+    };
+
+    const handleReply = (message) => {
+        if (justRedeemedGift && message) {
+            const updatedGifts = gifts.map(g =>
+                g.id === justRedeemedGift.id ? { ...g, replyMessage: message } : g
+            );
+            setGifts(updatedGifts);
+        }
         setView('dashboard');
+        setJustRedeemedGift(null);
     };
 
     const cancelGift = (id) => {
-        setGifts(gifts.map(g => g.id === id ? { ...g, status: 'cancelled' } : g));
+        const gift = gifts.find(g => g.id === id);
+        if (gift && gift.status === 'pending') {
+            setGifts(gifts.map(g => g.id === id ? { ...g, status: 'cancelled' } : g));
+            // Refund amount
+            const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + gift.amount };
+            setCurrentUser(updatedUser);
+            alert(`Gift cancelled. ₹${gift.amount} refunded to your wallet.`);
+        }
     };
 
     return (
@@ -140,6 +205,17 @@ const App = () => {
                             <QRDisplay
                                 gift={activeGift}
                                 onDone={() => setView('dashboard')}
+                            />
+                        )}
+
+                        {view === 'redemption-success' && justRedeemedGift && (
+                            <RedemptionSuccess
+                                gift={justRedeemedGift}
+                                onReply={handleReply}
+                                onDone={() => {
+                                    setView('dashboard');
+                                    setJustRedeemedGift(null);
+                                }}
                             />
                         )}
                     </div>
