@@ -137,3 +137,7 @@ By combining QR codes, secure transactions, and optional personal messages, the 
 
 ---
 
+<video width="100%" controls>
+  <source src="desktop/hackforge.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
