@@ -1,4 +1,5 @@
 # G-Card – Making Digital Money Feel Like a Gift
+DEMO VIDEO: https://drive.google.com/file/d/19m5NtnjMrciE7sFD1NEYNSUy9fY0va7Q/view
 
 ## 📌 What is G-Card?
 
@@ -136,8 +137,3 @@ G-Card demonstrates how digital payments can be transformed into **meaningful gi
 By combining QR codes, secure transactions, and optional personal messages, the project shows a practical approach to bringing emotion and intention back into digital money transfers.
 
 ---
-
-<video width="100%" controls>
-  <source src="desktop/hackforge.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
